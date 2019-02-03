@@ -39,9 +39,9 @@ int total_processes,completed_processes,missed_processes;
 
 float start_time[30];
 
-float waiting_time[30];
-
 int prev_process;
+
+float waiting_time[30];
 
 FILE *fptr1,*fptr2,*fptr3;
 
@@ -54,22 +54,22 @@ void next_process()
 {
 	int cnt=0,sz=Process_queue.size();
 
-	float deadline_temp=1e9,exec_temp=1e9;
+	float period_temp=1e9,exec_temp=1e9;
 
 	while(cnt<sz)
 	{
-		Process ref=Process_queue.front();	
+		Process ref=Process_queue.front();
 
-		if(deadline_temp==1e9||(ref.deadline<deadline_temp))
+		if(period_temp==1e9 || (ref.period<period_temp))
 		{
 			running=ref;
 
-			deadline_temp=ref.deadline;
-
+			period_temp=ref.period;
+		
 			exec_temp=ref.process_time;
 		}
 
-		else if(ref.deadline==deadline_temp)
+		else if(ref.period==period_temp)
 		{
 			if(ref.process_time<exec_temp)
 			{
@@ -77,7 +77,7 @@ void next_process()
 
 				exec_temp=ref.process_time;
 			}
-		}
+		}	
 
 		Process_queue.pop();
 
@@ -86,7 +86,7 @@ void next_process()
 		cnt++;
 	}
 
-	if(deadline_temp==1e9)
+	if(period_temp==1e9)
 	{
 		running.process_id=-1;
 
@@ -152,15 +152,17 @@ int main()
 
 	fptr1=fopen("inp-params.txt","r");
 
-	fptr2=fopen("ED-Log.txt","w");
+	fptr2=fopen("RM-Log.txt","w");
 
-	fptr3=fopen("ED-Stats.txt","w");
+	fptr3=fopen("RM-Stats.txt","w");
 
 	fscanf(fptr1,"%d",&num_of_process);
 
 	int process_id,num_of_times;
 
-	float period,process_time;
+	float process_time,period;
+
+	prev_process=-1;
 
 	float prev_left=0;
 
@@ -168,13 +170,15 @@ int main()
 
 	int repeat[num_of_process+1];
 
-	prev_process=-1;
-
 	while(cnt<num_of_process)
 	{
 		fscanf(fptr1,"%d %f %f %d",&process_id,&process_time,&period,&num_of_times);
 
 		fprintf(fptr2,"Process P%d: processing time=%f; deadline:%f, period=%f joined the system at time 0\n",process_id,process_time,period,period);
+
+		process_time*=1000.0;
+
+		period*=1000.0;
 
 		repeat[cnt+1]=num_of_times;
 
@@ -182,7 +186,13 @@ int main()
 
 		Fuple temp;
 
-		temp={process_id,process_time,period,num_of_times};
+		temp.process_id=process_id;
+
+		temp.process_time=process_time;
+
+		temp.period=period;
+
+		temp.num_of_times=num_of_times;
 
 		tim[process_id]=process_time;
 
@@ -243,7 +253,7 @@ int main()
 	{
 		float interrupt=it->interrupt;
 
-		if(!Process_queue.empty()) next_process();
+		if(!Process_queue.empty())next_process();
 
 		queue<Process>Temp_queue;
 
@@ -257,7 +267,7 @@ int main()
 
 				process_temp.period=it->period;
 
-				process_temp.deadline=it->interrupt+it->period;
+				process_temp.deadline=interrupt+it->period;
 
 				Temp_queue.push(process_temp);
 			}
@@ -299,7 +309,7 @@ int main()
 		{
 			waiting_time[running.process_id]+=(curr-start_time[running.process_id]);
 
-			if(prev_process!=-1)
+			if(prev_process!=-1) 
 			{
 				if(prev_process!=running.process_id)
 				{
@@ -318,13 +328,13 @@ int main()
 				{
 					fprintf(fptr2,"Process P%d resumes execution at %f \n",running.process_id,curr);
 				}
-			}		
+			}			
 	
 			if(curr+execution_time<=deadline)
 			{
 				start_time[running.process_id]=curr+execution_time;
 
-				update(running.process_id,-2);			
+				update(running.process_id,-2); 
 
 				fprintf(fptr2,"Process P%d finishes execution at %f \n",running.process_id,(curr+execution_time));
 
@@ -353,7 +363,7 @@ int main()
 		} while(curr<deadline);	
 	}
 
-	fprintf(fptr3,"Time displayed in milliseconds\n");
+	fprintf(fptr3,"Time displayed in microseconds\n");
 
 	fprintf(fptr3,"Number of processes that came into the system: %d\n",total_processes);
 
