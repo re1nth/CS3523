@@ -41,6 +41,10 @@ int start_time[30];
 
 int waiting_time[30];
 
+int prev_process;
+
+FILE *fptr1,*fptr2,*fptr3;
+
 bool compare(Event e1, Event e2)
 {
 	return (e1.interrupt<e2.interrupt);
@@ -50,7 +54,7 @@ void next_process()
 {
 	int cnt=0,sz=Process_queue.size();
 
-	int deadline_temp=INT_MAX;
+	int deadline_temp=INT_MAX,exec_temp=INT_MAX;
 
 	while(cnt<sz)
 	{
@@ -61,6 +65,18 @@ void next_process()
 			running=ref;
 
 			deadline_temp=ref.deadline;
+
+			exec_temp=ref.process_time;
+		}
+
+		else if(ref.deadline==deadline_temp)
+		{
+			if(ref.process_time<exec_temp)
+			{
+				running=ref;
+
+				exec_temp=ref.process_time;
+			}
 		}
 
 		Process_queue.pop();
@@ -100,8 +116,12 @@ void update(int process_id,int time_executes)
 				{
 					waiting_time[ref.process_id]+=(ref.deadline-start_time[ref.process_id]);
 
+					fprintf(fptr2,"The process %d is killed at deadline %d\n",ref.process_id,ref.deadline);
+
 					missed_processes++;
 				}
+
+				if(prev_process==ref.process_id) prev_process=-1;
 			}
 
 			else if(time_executes==-2)
@@ -130,12 +150,6 @@ int main()
 {
 	int num_of_process,cnt=0; 
 
-	FILE *fptr1=NULL;
-
-	FILE *fptr2=NULL;
-
-	FILE *fptr3=NULL;
-
 	fptr1=fopen("inp-params.txt","r");
 
 	fptr2=fopen("ED-Log.txt","w");
@@ -148,13 +162,13 @@ int main()
 
 	int process_time;
 
-	int prev_process=-1;
-
 	int prev_left=0;
 
 	int tim[num_of_process+1];
 
 	int repeat[num_of_process+1];
+
+	prev_process=-1;
 
 	while(cnt<num_of_process)
 	{
@@ -229,7 +243,7 @@ int main()
 	{
 		int interrupt=it->interrupt;
 
-		if(!Process_queue.empty())next_process();
+		if(!Process_queue.empty()) next_process();
 
 		queue<Process>Temp_queue;
 
@@ -304,7 +318,7 @@ int main()
 				{
 					fprintf(fptr2,"Process P%d resumes execution at %d \n",running.process_id,(int)curr);
 				}
-			}			
+			}		
 	
 			if(curr+execution_time<=deadline)
 			{
@@ -345,10 +359,18 @@ int main()
 
 	fprintf(fptr3,"Number of processes that missed their deadlines: %d\n",missed_processes);
 
+	int sum1=0,sum2=0;
+
 	for(int i=1;i<=num_of_process;i++)
 	{
 		fprintf(fptr3,"Average Waiting time for process %d is %f \n",i,(float(waiting_time[i])/repeat[i]));
+	
+		sum1+=(waiting_time[i]);
+
+		sum2+=(repeat[i]);
 	}
+
+	fprintf(fptr3,"Average waiting time is %f\n",float(sum1)/sum2);
 
 	fclose(fptr1);
 
