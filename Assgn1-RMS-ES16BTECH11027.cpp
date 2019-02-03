@@ -5,25 +5,25 @@ using namespace std;
 struct Event
 {
 	int process_id;
-	int interrupt;
-	int process_time;
+	float interrupt;
+	float process_time;
 	int action;
-	int period;
+	float period;
 };
 
 struct Process
 {
 	int process_id;
-	int process_time;
-	int deadline;
-	int period;
+	float process_time;
+	float deadline;
+	float period;
 };
 
 struct Fuple
 {
 	int process_id;
-	int process_time;
-	int period;
+	float process_time;
+	float period;
 	int num_of_times;
 };
 
@@ -37,11 +37,11 @@ Process running;
 
 int total_processes,completed_processes,missed_processes;
 
-int start_time[30];
+float start_time[30];
 
 int prev_process;
 
-int waiting_time[30];
+float waiting_time[30];
 
 FILE *fptr1,*fptr2,*fptr3;
 
@@ -54,13 +54,13 @@ void next_process()
 {
 	int cnt=0,sz=Process_queue.size();
 
-	int period_temp=INT_MAX,exec_temp=INT_MAX;
+	float period_temp=1e9,exec_temp=1e9;
 
 	while(cnt<sz)
 	{
 		Process ref=Process_queue.front();
 
-		if(period_temp==INT_MAX || (ref.period<period_temp))
+		if(period_temp==1e9 || (ref.period<period_temp))
 		{
 			running=ref;
 
@@ -86,19 +86,19 @@ void next_process()
 		cnt++;
 	}
 
-	if(period_temp==INT_MAX)
+	if(period_temp==1e9)
 	{
 		running.process_id=-1;
 
-		running.process_time=INT_MAX;
+		running.process_time=1e9;
 
 		running.deadline=-1;
 
-		running.period=INT_MAX;
+		running.period=1e9;
 	}
 }
 
-void update(int process_id,int time_executes)
+void update(int process_id,float time_executes)
 {	
 	int cnt=0,sz=Process_queue.size();
 
@@ -116,7 +116,7 @@ void update(int process_id,int time_executes)
 				{
 					waiting_time[ref.process_id]+=(ref.deadline-start_time[ref.process_id]);
 
-					fprintf(fptr2,"The process %d is killed at deadline %d\n",ref.process_id,ref.deadline);
+					fprintf(fptr2,"The process %d is killed at deadline %f\n",ref.process_id,ref.deadline);
 
 					missed_processes++;
 				}
@@ -158,23 +158,27 @@ int main()
 
 	fscanf(fptr1,"%d",&num_of_process);
 
-	int process_id,period,num_of_times;
+	int process_id,num_of_times;
 
-	int process_time;
+	float process_time,period;
 
 	prev_process=-1;
 
-	int prev_left=0;
+	float prev_left=0;
 
-	int tim[num_of_process+1];
+	float tim[num_of_process+1];
 
 	int repeat[num_of_process+1];
 
 	while(cnt<num_of_process)
 	{
-		fscanf(fptr1,"%d %d %d %d",&process_id,&process_time,&period,&num_of_times);
+		fscanf(fptr1,"%d %f %f %d",&process_id,&process_time,&period,&num_of_times);
 
-		fprintf(fptr2,"Process P%d: processing time=%d; deadline:%d, period=%d joined the system at time 0\n",process_id,process_time,period,period);
+		fprintf(fptr2,"Process P%d: processing time=%f; deadline:%f, period=%f joined the system at time 0\n",process_id,process_time,period,period);
+
+		process_time*=1000.0;
+
+		period*=1000.0;
 
 		repeat[cnt+1]=num_of_times;
 
@@ -182,7 +186,13 @@ int main()
 
 		Fuple temp;
 
-		temp={process_id,process_time,period,num_of_times};
+		temp.process_id=process_id;
+
+		temp.process_time=process_time;
+
+		temp.period=period;
+
+		temp.num_of_times=num_of_times;
 
 		tim[process_id]=process_time;
 
@@ -241,7 +251,7 @@ int main()
 
 	for(auto it=Event_list.begin();it!=Event_list.end();)
 	{
-		int interrupt=it->interrupt;
+		float interrupt=it->interrupt;
 
 		if(!Process_queue.empty())next_process();
 
@@ -281,9 +291,9 @@ int main()
 
 		if(it==Event_list.end()) break;
 
-		int curr=interrupt;
+		float curr=interrupt;
 
-		int deadline=it->interrupt;
+		float deadline=it->interrupt;
 
 		cnt=0; 
 
@@ -293,7 +303,7 @@ int main()
 
 		if(running.process_id==-1) break;
 
-		int execution_time=running.process_time;
+		float execution_time=running.process_time;
 
 		do		
 		{
@@ -303,20 +313,20 @@ int main()
 			{
 				if(prev_process!=running.process_id)
 				{
-					fprintf(fptr2,"Process P%d is preempted by P%d at %d. Remaining process time:%d \n",prev_process,running.process_id,(int)curr,(int)prev_left);
+					fprintf(fptr2,"Process P%d is preempted by P%d at %f. Remaining process time:%f \n",prev_process,running.process_id,curr,prev_left);
 				}
 			}
 
 			if(running.process_time==tim[running.process_id])
 			{
-				fprintf(fptr2,"Process P%d starts execution at %d \n",running.process_id,(int)curr);	
+				fprintf(fptr2,"Process P%d starts execution at %f \n",running.process_id,curr);	
 			}
 
 			else
 			{
 				if(prev_process!=running.process_id)
 				{
-					fprintf(fptr2,"Process P%d resumes execution at %d \n",running.process_id,(int)curr);
+					fprintf(fptr2,"Process P%d resumes execution at %f \n",running.process_id,curr);
 				}
 			}			
 	
@@ -326,7 +336,7 @@ int main()
 
 				update(running.process_id,-2); 
 
-				fprintf(fptr2,"Process P%d finishes execution at %d \n",running.process_id,(int)(curr+execution_time));
+				fprintf(fptr2,"Process P%d finishes execution at %f \n",running.process_id,(curr+execution_time));
 
 				prev_process=-1;
 			}
@@ -353,24 +363,26 @@ int main()
 		} while(curr<deadline);	
 	}
 
+	fprintf(fptr3,"Time displayed in microseconds\n");
+
 	fprintf(fptr3,"Number of processes that came into the system: %d\n",total_processes);
 
 	fprintf(fptr3,"Number of processes that successfully completed:%d\n",completed_processes);
 
 	fprintf(fptr3,"Number of processes that missed their deadlines: %d\n",missed_processes);
 
-	int sum1=0,sum2=0;
+	float sum1=0,sum2=0;
 
 	for(int i=1;i<=num_of_process;i++)
 	{
-		fprintf(fptr3,"Average Waiting time for process %d is %f \n",i,(float(waiting_time[i])/repeat[i]));
+		fprintf(fptr3,"Average Waiting time for process %d is %f \n",i,(waiting_time[i]/repeat[i]));
 	
 		sum1+=(waiting_time[i]);
 
 		sum2+=(repeat[i]);
 	}
 
-	fprintf(fptr3,"Average waiting time is %f\n",float(sum1)/sum2);
+	fprintf(fptr3,"Average waiting time is %f\n",sum1/sum2);
 
 	fclose(fptr1);
 
