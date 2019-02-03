@@ -1,2 +1,4 @@
 *.out
 *.txt
+edf.cpp
+rms.cpp

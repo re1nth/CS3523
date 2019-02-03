@@ -1,0 +1,18 @@
+Instructions to run the files :
+
+Rate Monotonic Scheduling : 
+g++ -std=c++14 -Wall -Wextra -w Assgn1-RMS-ES16BTECH11027.cpp
+./a.out
+
+Output files:
+RM-Log.txt
+RM-Stats.txt
+
+Earliest Deadline First Scheduling :
+
+g++ -std=c++14 -Wall -Wextra -w Assgn1-EDF-ES16BTECH11027.cpp
+./a.out
+
+Output files:
+EDF-Log.txt
+EDF-Stats.txt
