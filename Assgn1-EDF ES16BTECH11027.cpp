@@ -176,10 +176,6 @@ int main()
 
 		fprintf(fptr2,"Process P%d: processing time=%f; deadline:%f, period=%f joined the system at time 0\n",process_id,process_time,period,period);
 
-		process_time*=1000.0;
-
-		period*=1000.0;
-
 		repeat[cnt+1]=num_of_times;
 
 		total_processes+=(num_of_times);
