@@ -15,6 +15,7 @@ struct Process
 {
 	int process_id;
 	int process_time;
+	int deadline;
 	int period;
 };
 
@@ -33,6 +34,12 @@ queue<Process> Process_queue;
 vector<Fuple>Store;
 
 Process running;
+
+int total_processes,completed_processes,missed_processes;
+
+int start_time[30];
+
+int waiting_time[30];
 
 bool compare(Event e1, Event e2)
 {
@@ -85,7 +92,22 @@ void update(int process_id,int time_executes)
 
 		if(ref.process_id==process_id)
 		{
-			if(time_executes!=-1)
+			if(time_executes==-1)
+			{
+				if(ref.process_time>0) 
+				{
+					waiting_time[ref.process_id]+=(ref.deadline-start_time[ref.process_id]);
+
+					missed_processes++;
+				}
+			}
+
+			else if(time_executes==-2)
+			{
+				completed_processes++;
+			}
+
+			else
 			{
 				if(ref.process_time-time_executes>0)
 				{
@@ -93,7 +115,7 @@ void update(int process_id,int time_executes)
 
 					Process_queue.push(ref);	
 				}
-			}
+			}	
 		}	
 
 		else Process_queue.push(ref);
@@ -110,9 +132,13 @@ int main()
 
 	FILE *fptr2=NULL;
 
+	FILE *fptr3=NULL;
+
 	fptr1=fopen("inp-params.txt","r");
 
 	fptr2=fopen("RM-Log.txt","w");
+
+	fptr3=fopen("RM-Stats.txt","w");
 
 	fscanf(fptr1,"%d",&num_of_process);
 
@@ -126,11 +152,17 @@ int main()
 
 	int tim[num_of_process+1];
 
+	int repeat[num_of_process+1];
+
 	while(cnt<num_of_process)
 	{
 		fscanf(fptr1,"%d %d %d %d",&process_id,&process_time,&period,&num_of_times);
 
 		fprintf(fptr2,"Process P%d: processing time=%d; deadline:%d, period=%d joined the system at time 0\n",process_id,process_time,period,period);
+
+		repeat[cnt+1]=num_of_times;
+
+		total_processes+=(num_of_times);
 
 		Fuple temp;
 
@@ -209,6 +241,8 @@ int main()
 
 				process_temp.period=it->period;
 
+				process_temp.deadline=interrupt+it->period;
+
 				Temp_queue.push(process_temp);
 			}
 
@@ -223,6 +257,8 @@ int main()
 		while(!Temp_queue.empty())
 		{
 			Process_queue.push(Temp_queue.front());
+
+			start_time[Temp_queue.front().process_id]=interrupt;
 
 			Temp_queue.pop();
 		}
@@ -245,7 +281,9 @@ int main()
 
 		do		
 		{
-			if(prev_process!=-1)
+			waiting_time[running.process_id]+=(curr-start_time[running.process_id]);
+
+			if(prev_process!=-1) 
 			{
 				if(prev_process!=running.process_id)
 				{
@@ -268,15 +306,19 @@ int main()
 	
 			if(curr+execution_time<=deadline)
 			{
-				update(running.process_id,-1);			
+				start_time[running.process_id]=curr+execution_time;
+
+				update(running.process_id,-2); 
 
 				fprintf(fptr2,"Process P%d finishes execution at %d \n",running.process_id,(int)(curr+execution_time));
-			
+
 				prev_process=-1;
 			}
 
 			else 
 			{
+				start_time[running.process_id]=deadline;
+
 				prev_process=running.process_id;
 
 				prev_left=running.process_time-(deadline-curr);
@@ -295,9 +337,22 @@ int main()
 		} while(curr<deadline);	
 	}
 
+	fprintf(fptr3,"Number of processes that came into the system: %d\n",total_processes);
+
+	fprintf(fptr3,"Number of processes that successfully completed:%d\n",completed_processes);
+
+	fprintf(fptr3,"Number of processes that missed their deadlines: %d\n",missed_processes);
+
+	for(int i=1;i<=num_of_process;i++)
+	{
+		fprintf(fptr3,"Average Waiting time for process %d is %f \n",i,(float(waiting_time[i])/repeat[i]));
+	}
+
 	fclose(fptr1);
 
 	fclose(fptr2);
+
+	fclose(fptr3);
 
 	return 0;
 }
