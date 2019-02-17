@@ -1,6 +1,3 @@
-*.out
-*.txt
-edf.cpp
-rms.cpp
 *.pdf
-*.zip
+*.txt
+test.cpp
