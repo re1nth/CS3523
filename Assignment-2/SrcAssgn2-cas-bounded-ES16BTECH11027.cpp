@@ -107,7 +107,7 @@ int main()
 {	
 	FILE *fptr1=fopen("inp-params.txt","r");
 
-	FILE *fptr2=fopen("bounded_cas.txt","w");
+	FILE *fptr2=fopen("cas-bounded.txt","w");
 
 	fscanf(fptr1,"%d %d %d %d",&NUM_THREADS,&NUM_TIMES,&t1,&t2);
 
