@@ -26,7 +26,7 @@ double exitTime[100][100];
 
 bool waiting[100];
 
-double worst_case;
+double worst_case[100];
 
 double start_time;
 
@@ -74,7 +74,7 @@ void testCS(int id)
 
 		waiting_time[id]+=(actEnterTime[id][i]-reqEnterTime[id][i]); 
 
-		worst_case=max(worst_case,waiting_time[id]);
+		worst_case[id]=max(worst_case[id],actEnterTime[id][i]-reqEnterTime[id][i]);
 
 		// simulation of critical section
 
@@ -150,14 +150,24 @@ int main()
 
 	fprintf(fptr2,"Number of times each thread is executed : %d\n",NUM_TIMES);
 
-	fprintf(fptr2,"Worst case waiting time (in micro seconds) : %.9lf\n",worst_case*1e6);
+	double avg_waiting_time=0;
+
+	double avg_worst_time=0;
 
 	for(int i=0;i<NUM_THREADS;i++)
 	{
-		fprintf(fptr2,"Thread %d : Average waiting time(micro seconds) : %.9lf \n",i+1,waiting_time[i]/(NUM_THREADS)*1e6);
+		fprintf(fptr2,"Thread %d : Average waiting time(micro seconds) : %.9lf \n",i+1,waiting_time[i]/(NUM_TIMES)*1e6);
+
+		fprintf(fptr2,"Thread %d : Worst case waiting time (micro seconds) : %.9lf\n",i+1,worst_case[i]*1e6);
+	
+		avg_waiting_time+=(waiting_time[i]/NUM_TIMES);
+		
+		avg_worst_time+=(worst_case[i]);
 	}
 
-	fprintf(fptr2,"Assuming application starts at 0.0000000 microseconds\n");
+	fprintf(fptr2,"Average time taken by a thread in CAS-BOUNDED : %.9lf \n",avg_waiting_time/(NUM_THREADS)*1e6);
+
+	fprintf(fptr2,"Average worst time taken by a thread in CAS-BOUNDED : %.9lf \n",avg_worst_time/(NUM_THREADS)*1e6);
 
 	for(int i=0;i<vec.size();i++)
 	{
