@@ -5,12 +5,20 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <vector>
+#include <time.h>
+#include <random>
 
 using namespace std;
 
 int NUM_THREADS,NUM_TIMES;
 
 double t1,t2;
+
+default_random_engine generator;
+
+exponential_distribution<double>expo1(1/5);
+
+exponential_distribution<double>expo2(1/20);
 
 atomic<bool> foo(false);
 
@@ -40,7 +48,14 @@ vector<capsule>vec;
 
 bool mycomp(capsule s1,capsule s2)
 {
-	return(s1.xtime<s2.xtime);
+	if(s1.xtime>s2.xtime) return false;
+
+	else if(s1.xtime<s2.xtime) return true;
+
+	else
+	{
+		return (s1.type>s2.type);	
+	}
 }
 
 void testCS(int id)
@@ -65,19 +80,19 @@ void testCS(int id)
 
 		// simulation of critical section
 
-		usleep(t1);
+		usleep(expo1(generator)*1e6);
 
 		// exitsection
 
-		atomic_exchange_explicit(&foo,false,memory_order_release);
-	
 		gettimeofday(&tp[id],NULL);
 
 		exitTime[id][i]=(double)tp[id].tv_sec+(double)tp[id].tv_usec*(1e-6)-start_time;
 
+		atomic_exchange_explicit(&foo,false,memory_order_release);
+
 		// simulation of reminder section
 
-		usleep(t2);		
+		usleep(expo2(generator)*1e6);		
 	}
 }
 
@@ -144,7 +159,7 @@ int main()
 
 	fprintf(fptr2,"Average worst time taken by a thread in TAS : %.9lf \n",avg_worst_time/(NUM_THREADS)*1e6);
 
-	fprintf(fptr2,"Assuming application starts at 0.0000000 microseconds\n");
+	fprintf(fptr2,"Assuming application starts at 0.0000000 micro seconds\n");
 
 	for(int i=0;i<vec.size();i++)
 	{

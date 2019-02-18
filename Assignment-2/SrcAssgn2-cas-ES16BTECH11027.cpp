@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <vector>
+#include <random>
 
 using namespace std;
 
@@ -12,7 +13,13 @@ int NUM_THREADS,NUM_TIMES;
 
 double t1,t2;
 
-atomic<bool> foo(false);
+int foo;
+
+default_random_engine generator;
+
+exponential_distribution<double>expo1(1/5);
+
+exponential_distribution<double>expo2(1/20);
 
 struct timeval tp[100];
 
@@ -42,7 +49,14 @@ vector<capsule>vec;
 
 bool mycomp(capsule s1,capsule s2)
 {
-	return(s1.xtime<s2.xtime);
+	if(s1.xtime>s2.xtime) return false;
+
+	else if(s1.xtime<s2.xtime) return true;
+
+	else
+	{
+		return (s1.type>s2.type);	
+	}
 }
 
 void testCS(int id)
@@ -55,9 +69,7 @@ void testCS(int id)
 
 		// entry section
 
-		while(foo.compare_exchange_strong(f1,f2)){}
-
-		// while(atomic_exchange_explicit(&foo,true,memory_order_acquire)){}
+		while(__sync_val_compare_and_swap(&foo,0,1)){}
 		
 		gettimeofday(&tp[id],NULL);
 
@@ -69,11 +81,9 @@ void testCS(int id)
 
 		// simulation of critical section
 
-		usleep(t1);
+		usleep(expo1(generator)*1e6);
 
 		// exitsection
-
-		atomic_exchange_explicit(&foo,false,memory_order_release);
 	
 		gettimeofday(&tp[id],NULL);
 
@@ -81,7 +91,9 @@ void testCS(int id)
 
 		// simulation of reminder section
 
-		usleep(t2);		
+		__sync_and_and_fetch(&foo,0);
+
+		usleep(expo2(generator)*1e6);		
 	}
 }
 
@@ -93,6 +105,8 @@ int main()
 
 	fscanf(fptr1,"%d %d %d %d",&NUM_THREADS,&NUM_TIMES,&t1,&t2);
 
+	foo=0;
+
 	thread myThreads[NUM_THREADS];
 
 	struct timeval bar;
@@ -100,9 +114,6 @@ int main()
 	gettimeofday(&bar,NULL);
 
 	start_time=(double)bar.tv_sec+(double)bar.tv_usec*(1e-6);	
-
-	f1=false;
-	f2=true;
 
 	for(int i=0;i<NUM_THREADS;i++)
 	{
@@ -151,7 +162,7 @@ int main()
 
 	fprintf(fptr2,"Average worst time taken by a thread in CAS : %.9lf \n",avg_worst_time/(NUM_THREADS)*1e6);
 
-	fprintf(fptr2,"Assuming application starts at 0.0000000 microseconds\n");
+	fprintf(fptr2,"Assuming application starts at 0.0000000 seconds\n");
 
 	for(int i=0;i<vec.size();i++)
 	{

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <vector>
+#include <random>
 
 using namespace std;
 
@@ -12,7 +13,13 @@ int NUM_THREADS,NUM_TIMES;
 
 double t1,t2;
 
-atomic<bool> foo(false);
+int foo;
+
+default_random_engine generator;
+
+exponential_distribution<double>expo1(1/5);
+
+exponential_distribution<double>expo2(1/20);
 
 struct timeval tp[100];
 
@@ -44,7 +51,14 @@ vector<capsule>vec;
 
 bool mycomp(capsule s1,capsule s2)
 {
-	return(s1.xtime<s2.xtime);
+	if(s1.xtime>s2.xtime) return false;
+
+	else if(s1.xtime<s2.xtime) return true;
+
+	else
+	{
+		return (s1.type>s2.type);	
+	}
 }
 
 void testCS(int id)
@@ -59,12 +73,7 @@ void testCS(int id)
 		
 		waiting[id]=true;
 
-		atomic_exchange_explicit(&foo,true,memory_order_release);
-
-		while (waiting[id] && foo)
-		{
-			foo.compare_exchange_strong(f2,f1);
-		}
+		while (waiting[id] && __sync_val_compare_and_swap(&foo,0,1)){}
 
 		waiting[id]=false;
 	
@@ -78,10 +87,6 @@ void testCS(int id)
 
 		// simulation of critical section
 
-		usleep(t1);
-
-		// exitsection
-
 		int ex=(id+1)%(NUM_THREADS);
 
 		while(ex!=id && !waiting[ex])
@@ -89,17 +94,21 @@ void testCS(int id)
 			ex=(ex+1)%(NUM_THREADS);
 		}
 
-		if(ex==id) atomic_exchange_explicit(&foo,false,memory_order_release); 
+		usleep(expo1(generator)*1e6);
 
-		else waiting[ex]=false;
+		// exitsection
 
 		gettimeofday(&tp[id],NULL);
 
 		exitTime[id][i]=(double)tp[id].tv_sec+(double)tp[id].tv_usec*(1e-6)-start_time;
 
+		if(ex==id) __sync_and_and_fetch(&foo,0); 
+
+		else waiting[ex]=false;
+
 		// simulation of reminder section
 
-		usleep(t2);		
+		usleep(expo2(generator)*1e6);		
 	}
 }
 
@@ -113,8 +122,7 @@ int main()
 
 	thread myThreads[NUM_THREADS];
 
-	f1=false;
-	f2=true;
+	foo=0;
 
 	struct timeval bar;
 
