@@ -1,6 +1,7 @@
 *.png
 *.pdf
 *.txt
+*.ppt
 test.cpp
 tes1.cpp
 test2.cpp

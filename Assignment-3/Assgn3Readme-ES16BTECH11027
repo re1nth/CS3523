@@ -1,0 +1,16 @@
+Instructions to run the files :
+
+Producer-consumer using Semaphores: 
+g++ -std=c++14 -Wall -Wextra -w prod_cons-sems-ES16BTECH11027.cpp -o sem 
+./sem
+
+Output files:
+sem-log.txt
+
+Producer-consumer using Locks:
+
+g++ -std=c++14 -Wall -Wextra -w prod_cons-locks-ES16BTECH11027.cpp -o lock
+.lock
+
+Output files:
+lock-log.txt
